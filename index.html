@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お天気アプリ</title>
+	<link rel="stylesheet" href="https://unpkg.com/ress/dist/ress.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+	<h1 class="title">天気</h1>
+	<div class="inner">
+    <div class="threeDays"></div>
+    <div class="precipitation">
+        <table></table>
+    </div>
+	<div class="seventh">
+		<table>
+			<tr>
+				<th>日付</th>
+				<th>天気</th>
+			</tr>
+		</table>
+	</div>
+	<div id="player"></div>
+	<h2></h2>
+	<section class="header-content">	
+        <button type="button" class="btn btn-secondary my-4">Hello Kitty</button>
+</section>
+
+<div class="catdiv">
+
+</div>
+</div>
+   
+	
+    <script src="weathercode.js"></script>
+<script>
+	//東海4県のコード番号をオブジェクトの配列にしておきます。
+	const codeNums = [{ 愛知県: 23 }, { 岐阜県: 21 }, { 三重県: 24 }, { 静岡県: 22 }];
+	//テンプレートリテラルでconst urlに代入します。
+	const url = `https://www.jma.go.jp/bosai/forecast/data/overview_forecast/${codeNums[0]['愛知県']}0000.json`;
+    const weekUrl = `https://www.jma.go.jp/bosai/forecast/data/forecast/${codeNums[0]['愛知県']}0000.json`;
+	const cat ='https://api.thecatapi.com/v1/images/search'
+    
+
+ 
+
+        fetch(weekUrl)
+		.then(function (response) {
+			return response.json();
+		})
+		.then(function (data) {
+			//愛知県西部の天気予報をwest、日付をweatherDateに代入します。
+			const west = data[0].timeSeries[0].areas[0];
+			const weatherDate = data[0].timeSeries[0].timeDefines;
+			
+			const today = data[0].timeSeries[0].areas[0].weatherCodes[0];
+			console.log(today)
+			const result = document.querySelector('.threeDays');
+			result.innerHTML = `<h1>${west.area.name}</h1>`;
+			const elmUl = document.createElement('ul');
+			result.appendChild(elmUl);
+			for (let i = 0; i < west.weathers.length; i++) {
+				const elmLi = document.createElement('li');
+				//new Date()で月日を取得します。※月は0から始まるので+1
+				elmLi.innerHTML = `${new Date(weatherDate[i]).getMonth() + 1}月${new Date(weatherDate[i]).getDate()}日：${west.weathers[i]}`;
+
+				elmUl.appendChild(elmLi);
+				
+			}
+		});
+
+		fetch(weekUrl)
+		.then(function (response) {
+			return response.json();
+		})
+		.then(function (data) {
+			//気象庁の天気情報jsonから天気コードを取得
+			const weekly = data[1].timeSeries[0].areas[0].weatherCodes;
+			//予報日を取得
+			const weeklyDate = data[1].timeSeries[0].timeDefines;
+			//曜日設定用の配列を用意
+			const dayarray = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+			//表示させるDOMを取得
+			const seventhArea = document.querySelector('.seventh');
+			const elmTable = document.querySelector('.seventh table');
+			//h1に愛知県を表示させて、追加する。
+			const aichiTitle = document.createElement('h1');
+			aichiTitle.innerHTML = `${data[1].timeSeries[0].areas[0].area.name}週間天気`;
+			seventhArea.insertBefore(aichiTitle, elmTable);
+
+			//1週間の日数をループさせる
+			for (let i = 0; i < weekly.length; i++) {
+				console.log(weekly[i], weeklyDate[i]);
+				//trは行、tdは列で必要な要素を作成
+				const elmTr = document.createElement('tr');
+				const elmTdDate = document.createElement('td');
+				const elmTdWeather = document.createElement('td');
+				//日数を行に設定
+				elmTdDate.innerHTML = `${new Date(weeklyDate[i]).getDate()}日（${dayarray[new Date(weeklyDate[i]).getDay()]}）`;
+				elmTr.appendChild(elmTdDate);
+				//更に天気コードから行に追加
+				elmTdWeather.innerHTML = weathercodes[weekly[i]][3];
+				elmTr.appendChild(elmTdWeather);
+				//tableに行を追加
+				elmTable.appendChild(elmTr);
+			}
+		});
+		
+        fetch(weekUrl)
+		.then(function (response) {
+			return response.json();
+		})
+		.then(function (data) {
+			const precipAria = document.querySelector('.precipitation');
+			const precipTable = document.querySelector('.precipitation table');
+			const head1 = document.createElement('h1');
+			head1.innerHTML = `降水率`;
+			precipAria.insertBefore(head1, precipTable);
+
+			const elmTr1 = document.createElement('tr');
+			const elmTr2 = document.createElement('tr');
+			const timeStamp = data[0].timeSeries[1].timeDefines;
+			const pops = data[0].timeSeries[1].areas[1].pops;
+			console.log(pops);
+			for (const time of timeStamp) {
+				const data = new Date(time);
+				const elmTh = document.createElement('th');
+				elmTh.innerHTML = `${data.getHours()}:${data.getMinutes().toString().padStart(2, '0')}`;
+				elmTr1.appendChild(elmTh);
+				precipTable.appendChild(elmTr1);
+			}
+
+			for (const percent of pops) {
+				const elmTh = document.createElement('th');
+				elmTh.innerHTML = `${percent}%`;
+				elmTr2.appendChild(elmTh);
+				precipTable.appendChild(elmTr2);
+			}
+		});
+        fetch(weekUrl)
+		.then(function (response) {
+			return response.json();
+		})
+		.then(function (data) {
+			const result = document.querySelector('.threeDays');
+			const code = data[0].timeSeries[0].areas[0].weatherCodes;
+			const todayCode =data[0].timeSeries[0].areas[0].weatherCodes[0];
+			console.log(todayCode)
+			//youtube
+		const popList = ["Mi9uNu35Gmk", "9aJVr5tTTWk","qag4ewos4TE","ZFoJYI7Q4iA"]
+		const sadList = ["szFhwZ52NyY","PrRyJBo7VEw","UNRJyBHziX4"
+		,"WfB79A7EKxo"]
+		const powList = ["evCrxxtslVU","NCPH9JUFESA","Ujb-ZeX7Mo8",
+		"HeXVJvEYynw"]
+		const upList = ["YdHO0R4FeyQ","dv13gl0a-FA","aPI7ZeOGckQ","V1kZkvvAcdI"]
+		let todaySong = popList[Math.floor(Math.random()*4)];
+		console.log(todaySong)
+
+			
+			for (let i = 0; i < code.length; i++) {
+				console.log(weathercodes[code[i]][0]);
+				const image = document.createElement('img');
+				image.classList.add("img" + i)
+				const weathericon = weathercodes[code[i]][0];
+				image.src = `https://www.jma.go.jp/bosai/forecast/img/${weathericon}`;
+				result.appendChild(image);
+				
+			}
+			let iframe = document.createElement("iframe")
+			let h1 = document.querySelector(".title");
+			let body = document.querySelector("body");
+				let play = document.querySelector("#player");
+				play.appendChild(iframe);
+				if(todayCode < 200){
+				console.log(1);
+				iframe.setAttribute("src","https://www.youtube.com/embed/"+popList[Math.floor(Math.random()*4)] )
+				h1.classList.add("sunny")
+				body.classList.add("sunnyBack")
+				let h2 = document.querySelector("h2")
+				h2.innerHTML="猫はいません。"
+
+			}else if (todayCode < 300){
+				console.log(2)
+				iframe.setAttribute("src","https://www.youtube.com/embed/"+sadList[Math.floor(Math.random()*4)] )
+				h1.classList.add("cloud")
+				body.classList.add("cloudBack")
+				let h2 = document.querySelector("h2")
+				h2.innerHTML="猫はいません。"
+			}else if (todayCode <400){
+				console.log(3)
+				iframe.setAttribute("src","https://www.youtube.com/embed/"+powList[Math.floor(Math.random()*4)] )
+				h1.classList.add("rain")
+				body.classList.add("rainBack")
+				let h2 = document.querySelector("h2")
+				h2.innerHTML="猫がいます！"
+				const section = document.querySelector('.catdiv')
+				const button = document.querySelector('.btn')
+						async function getRandomCats() {
+					section.innerHTML = ''
+					
+				try {
+					const response = await fetch(cat)
+					const json = await response.json()
+					console.log('JSON:', json)
+					return randomCatPhoto(json)
+				} catch (e) {
+					console.log('This is an error')
+					console.log(e)
+				}
+				}
+
+				randomCatPhoto = json => {
+					let photo = json[0].url
+					section.classList.add('cats')
+					
+					let image = document.createElement('img')
+					image.src = photo
+					image.classList.add('random_cats')
+					image.alt = photo
+					
+					section.appendChild(image)
+				}
+				button.addEventListener('click', getRandomCats)
+			}else{
+				console.log(4)
+				iframe.setAttribute("src","https://www.youtube.com/embed/"+upList[Math.floor(Math.random()*4)] )
+				h1.classList.add("snow")
+				body.classList.add("snowBack")
+				let h2 = document.querySelector("h2")
+				h2.innerHTML="猫がいます！"
+				const section = document.querySelector('.catdiv')
+				const button = document.querySelector('.btn')
+						async function getRandomCats() {
+					section.innerHTML = ''
+					
+				try {
+					const response = await fetch(cat)
+					const json = await response.json()
+					console.log('JSON:', json)
+					return randomCatPhoto(json)
+				} catch (e) {
+					console.log('This is an error')
+					console.log(e)
+				}
+				}
+
+				randomCatPhoto = json => {
+					let photo = json[0].url
+					section.classList.add('cats')
+					
+					let image = document.createElement('img')
+					image.src = photo
+					image.classList.add('random_cats')
+					image.alt = photo
+					
+					section.appendChild(image)
+				}
+				button.addEventListener('click', getRandomCats)
+			}
+					
+		});
+		
+
+
+		
+
+
+		
+
+</script>
+</body>
+</html>
